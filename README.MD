@@ -19,31 +19,31 @@ Before running the application, make sure you have the following installed:
 
 ## Getting Started
 
-### 1. Clone the repository:
+## 1. Clone the repository:
 
    ```bash
    git clone https://github.com/your-username/mongo-school-express-api.git
 
-### 2. Install dependencies:
+## 2. Install dependencies:
 
 cd mongo-school-express-api
 npm install
 
-### 3. Configure environment variables:
+## 3. Configure environment variables:
 Create a `.env` file in the root directory and add the following:
 
 MONGO_URI=your_mongodb_connection_string
 TOKEN_SECRET=your_jwt_secret
 
-### 4. Run the application:
+## 4. Run the application:
 
 npm start
 
-### 5. Access the API:
+## 5. Access the API:
 
 The API will be running on 'http://localhost:3000'.
 
-### Endpoints
+## Endpoints
 - GET /professors: Retrieve all professors
 
 - POST /professors: Add a new professor
