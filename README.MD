@@ -44,27 +44,27 @@ npm start
 The API will be running on 'http://localhost:3000'.
 
 ### Endpoints
-* GET /professors: Retrieve all professors
+- GET /professors: Retrieve all professors
 
-* POST /professors: Add a new professor
+- POST /professors: Add a new professor
 
-* PUT /professors/:id: Update a professor by ID
+- PUT /professors/:id: Update a professor by ID
 
-* DELETE /professors/:id: Delete a professor by ID
+- DELETE /professors/:id: Delete a professor by ID
 
-* GET /modules: Retrieve all modules
+- GET /modules: Retrieve all modules
 
-* POST /modules: Add a new module
+- POST /modules: Add a new module
 
-* PUT /modules/:id: Update a module by ID
+- PUT /modules/:id: Update a module by ID
 
-* DELETE /modules/:id: Delete a module by ID
+- DELETE /modules/:id: Delete a module by ID
 
-* POST /signup: User signup
+- POST /signup: User signup
 
-* POST /login: User login (authentication)
+- POST /login: User login (authentication)
 
-* GET /profile: Retrieve user profile (protected route)
+- GET /profile: Retrieve user profile (protected route)
 
-* GET /payment: Access protected payment route (example)
+- GET /payment: Access protected payment route (example)
 
