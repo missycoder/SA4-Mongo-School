@@ -1,15 +1,29 @@
-const mongodb = require('mongodb');
-const MongoClient = mongodb.MongoClient;
+const jwt = require('jsonwebtoken');
 
-async function connect(uri, dbname) {
-    try {
-        const client = await MongoClient.connect(uri);
-        console.log("Connected to MongoDB");
-        return client.db(dbname);
-    } catch (error) {
-        console.error("Error connecting to MongoDB:", error);
-        throw error;
+// this is a middleware function that check if a valid JWT has been provided
+function authenticateWithJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+        const token = authHeader.split(" ")[1];
+        
+        jwt.verify(token, process.env.TOKEN_SECRET, function(err,payload){
+            if (err) {
+                res.status(400);
+                return res.json({
+                    'error': err
+                })
+            } else {
+                // the JWT is valid, forward request to the route and store the payload in the request
+                req.payload = payload;
+                next();
+            }
+        })
+    } else {
+        res.status(400);
+        res.json({
+            'error':'Login required to access this route'
+        })
     }
 }
 
-module.exports = { connect };
+module.exports = { authenticateWithJWT };

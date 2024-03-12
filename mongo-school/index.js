@@ -2,13 +2,16 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { ObjectId, MongoDBCollectionNamespace } = require('mongodb');
+// const { ObjectId, MongoDBCollectionNamespace } = require('mongodb');
+const ObjectId = require('mongodb').ObjectId;
 require('dotenv').config();
 
 // if we are trying to require from our
 // own files, we need the './'
+// `connect` exporting from `MongoUtil.js` connect function
 const { connect } = require('./MongoUtil');
 const { authenticateWithJWT } = require('./middleware');
+
 
 const app = express();
 
@@ -23,8 +26,10 @@ const DB_NAME = process.env.DB_NAME;
 async function main() {
 
      // get the database using the `connect` function
-    const Client = await mongodb.MongoClient.connect(MONGO_URI);
-    const db = Client.db(DB_NAME);
+     // call `connect` in `MongoUtil`.js
+    const db = await connect(MONGO_URI,DB_NAME);
+    // const db = Client.db(DB_NAME);
+
 
 // SETUP ROUTES
     app.get('/api', function (req, res) {
