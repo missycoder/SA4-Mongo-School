@@ -1,22 +1,15 @@
-const jwt = require('jsonwebtoken');
+const mongodb = require('mongodb');
+const MongoClient = mongodb.MongoClient;
 
-// Middleware to authenticate JWT
-function authenticateWithJWT(req, res, next) {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader) {
-        return res.status(400).json({ 'error': 'Login required to access this route' });
+async function connect(uri, dbname) {
+    try {
+        const client = await MongoClient.connect(uri);
+        console.log("Connected to MongoDB");
+        return client.db(dbname);
+    } catch (error) {
+        console.error("Error connecting to MongoDB:", error);
+        throw error;
     }
-
-    const token = authHeader.split(" ")[1];
-
-    jwt.verify(token, process.env.TOKEN_SECRET, function (err, payload) {
-        if (err) {
-            return res.status(400).json({ 'error': err });
-        }
-        req.payload = payload;
-        next();
-    });
 }
 
-module.exports = { authenticateWithJWT };
+module.exports = { connect };

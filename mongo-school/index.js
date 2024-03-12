@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { ObjectId } = require('mongodb');
+const { ObjectId, MongoDBCollectionNamespace } = require('mongodb');
 require('dotenv').config();
 
 // if we are trying to require from our
@@ -11,8 +11,28 @@ const { connect } = require('./MongoUtil');
 const { authenticateWithJWT } = require('./middleware');
 
 const app = express();
-app.use(cors());
+
 app.use(express.json());
+
+app.use(cors());
+
+// connection string
+const MONGO_URI = process.env.MONGO_URI;
+const DB_NAME = process.env.DB_NAME;
+
+async function main() {
+
+     // get the database using the `connect` function
+    const Client = await mongodb.MongoClient.connect(MONGO_URI);
+    const db = Client.db(DB_NAME);
+
+// SETUP ROUTES
+    app.get('/api', function (req, res) {
+        res.json({
+            "message": "API is running"
+        })
+    })
+
 
 // JWT aka 'access token' grants access to protected routes
 function generateAccessToken(id, email) {
@@ -25,66 +45,64 @@ function generateAccessToken(id, email) {
     });
 }
 
-async function main() {
-    // connection string 
-    const uri = process.env.MONGO_URI;
-    // get the database using the `connect` function
-    const db = await connect(uri, "mongo_school");
-
     // CRUD operations for `professors` collection
 
     // GET all professors
-    app.get("/professors", async function (req, res) {
+    app.get('/api/professors', async function (req, res) {
         try {
-            const professors = await db.collection("professors").find().toArray();
-            res.json(professors);
+            const professors = await db.collection('professors').find({}).toArray();
+            res.json({'professors' : professors});
         } catch (error) {
             res.status(500).json({ 'error': error.message });
         }
     });
 
     // ADD a new professor
-    app.post("/professors", async function (req, res) {
+    app.post('/api/professors', async function (req, res) {
         try {
+            // Object Destructuring
             const { name, email, experience, moduleId } = req.body;
-            const result = await db.collection("professors").insertOne({
+            const newProfessor = {
                 name,
                 email,
                 experience,
                 moduleId: ObjectId(moduleId) 
-            });
-            res.json(result.ops[0]);
-        } catch (error) {
-            res.status(500).json({ 'error': error.message });
-        }
-    });
+            };
 
-    // UPDATE an existing professor
-    app.put('/professors/:id', async function (req, res) {
-        try {
-            const { name, email, experience, moduleId } = req.body;
-            const result = await db.collection("professors").updateOne({
-                '_id': ObjectId(req.params.id)
-            }, {
-                '$set': {
-                    name,
-                    email,
-                    experience,
-                    moduleId: ObjectId(moduleId) 
-                }
-            });
+            const result = await db.collection('professors').insertOne(newProfessor);
+           
             res.json(result);
         } catch (error) {
             res.status(500).json({ 'error': error.message });
         }
     });
 
-    // DELETE an existing professor
-    app.delete('/professors/:id', async function (req, res) {
+    // UPDATE an existing professor
+    app.put('/api/professors/:professorsid', async function (req, res) {
         try {
-            await db.collection('professors').deleteOne({
-                '_id': ObjectId(req.params.id)
+            const professorsId = req.params.professorsid;
+            const { name, email, experience, moduleId } = req.body;
+            const modifiedProfessor = {
+                name, email, experience, moduleId
+            }
+            const result = await db.collection('professors').updateOne({
+                '_id': new ObjectId(professorsId)
+            }, {
+                '$set': modifiedProfessor 
             });
+            res.json({result : result});
+        } catch (error) {
+            res.status(500).json({ 'error': error.message });
+        }
+    });
+
+    // DELETE an existing professor
+    app.delete('/api/professors/:professorsid', async function (req, res) {
+        try {
+            const professorsId = req.params.professorsid;
+           const result = await db.collection('professors').deleteOne({
+                '_id': new ObjectId(professorsId)
+            })
             res.json({ 'message': "Professor deleted" });
         } catch (error) {
             res.status(500).json({ 'error': error.message });
@@ -175,11 +193,11 @@ app.post('/login', async function (req, res) {
         const { email, password } = req.body;
         const user = await db.collection('users').findOne({ email });
         if (!user) {
-            return res.status(401).json({ 'error': 'Invalid email or password' });
+            return res.status(401).json({ 'error': 'Invalid login credentials' });
         }
         const passwordMatch = await bcrypt.compare(password, user.password);
         if (!passwordMatch) {
-            return res.status(401).json({ 'error': 'Invalid email or password' });
+            return res.status(401).json({ 'error': 'Invalid login credentials' });
         }
         const token = generateAccessToken(user._id, user.email);
         res.json({ 'token': token });
@@ -190,11 +208,12 @@ app.post('/login', async function (req, res) {
 
 
 // Protected route: client must provide the JWT to access
+// Before route can go through the function, it will go through `authenticateWithJWT`
 app.get('/profile', authenticateWithJWT, async function (req, res) {
     // Endpoint to access user profile
     // Use `req.payload` to get user information from the JWT payload
     res.json({
-        'message': 'success in accessing protected route',
+        'message': 'Success in accessing protected route',
         'payload': req.payload
     });
 });
