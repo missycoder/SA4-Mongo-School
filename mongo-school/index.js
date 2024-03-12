@@ -23,21 +23,6 @@ app.use(cors());
 const MONGO_URI = process.env.MONGO_URI;
 const DB_NAME = process.env.DB_NAME;
 
-async function main() {
-
-     // get the database using the `connect` function
-     // call `connect` in `MongoUtil`.js
-    const db = await connect(MONGO_URI,DB_NAME);
-    // const db = Client.db(DB_NAME);
-
-
-// SETUP ROUTES
-    app.get('/api', function (req, res) {
-        res.json({
-            "message": "API is running"
-        })
-    })
-
 
 // JWT aka 'access token' grants access to protected routes
 function generateAccessToken(id, email) {
@@ -50,13 +35,31 @@ function generateAccessToken(id, email) {
     });
 }
 
+async function main() {
+
+    // get the database using the `connect` function
+    // call `connect` in `MongoUtil`.js
+    // const client = await connect(MONGO_URI,DB_NAME);
+    const db = await connect(MONGO_URI, DB_NAME);
+
+
+    // SETUP ROUTES
+    app.get('/api', function (req, res) {
+        res.json({
+            "message": "API is running"
+        })
+    })
+
+
+
+
     // CRUD operations for `professors` collection
 
     // GET all professors
     app.get('/api/professors', async function (req, res) {
         try {
             const professors = await db.collection('professors').find({}).toArray();
-            res.json({'professors' : professors});
+            res.json({ 'professors': professors });
         } catch (error) {
             res.status(500).json({ 'error': error.message });
         }
@@ -71,11 +74,11 @@ function generateAccessToken(id, email) {
                 name,
                 email,
                 experience,
-                moduleId: ObjectId(moduleId) 
+                moduleId: ObjectId(moduleId)
             };
 
             const result = await db.collection('professors').insertOne(newProfessor);
-           
+
             res.json(result);
         } catch (error) {
             res.status(500).json({ 'error': error.message });
@@ -93,9 +96,9 @@ function generateAccessToken(id, email) {
             const result = await db.collection('professors').updateOne({
                 '_id': new ObjectId(professorsId)
             }, {
-                '$set': modifiedProfessor 
+                '$set': modifiedProfessor
             });
-            res.json({result : result});
+            res.json({ result: result });
         } catch (error) {
             res.status(500).json({ 'error': error.message });
         }
@@ -105,7 +108,7 @@ function generateAccessToken(id, email) {
     app.delete('/api/professors/:professorsid', async function (req, res) {
         try {
             const professorsId = req.params.professorsid;
-           const result = await db.collection('professors').deleteOne({
+            const result = await db.collection('professors').deleteOne({
                 '_id': new ObjectId(professorsId)
             })
             res.json({ 'message': "Professor deleted" });
@@ -172,64 +175,70 @@ function generateAccessToken(id, email) {
         }
     });
 
-}
+    // User SIGNUP route
+    app.post('/signup', async function (req, res) {
+        try {
+            const hashedPassword = await bcrypt.hash(req.body.password, 12);
+            const result = await db.collection('users').insertOne({
+                "email": req.body.email,
+                "password": hashedPassword
+            });
 
-// User SIGNUP route
-app.post('/signup', async function (req, res) {
-    try {
-        const { email, password } = req.body;
-        const hashedPassword = await bcrypt.hash(password, 12);
-        const result = await db.collection('users').insertOne({
-            email,
-            password: hashedPassword
+            res.json({
+                'result': result,
+                'message': 'User signed up successfully'
+            });
+        } catch (error) {
+            res.status(500).json({
+
+                'error': error.message
+            });
+        }
+    });
+
+    // User LOGIN route
+    // Generate and send back the JWT (access token)
+    app.post('/login', async function (req, res) {
+        try {
+            // Login authentication logic
+            // // After successful authentication, generate JWT and send back
+            const { email, password } = req.body;
+            const user = await db.collection('users').findOne({ email });
+            if (!user) {
+                return res.status(401).json({ 'error': 'Invalid login credentials' });
+            }
+            const passwordMatch = await bcrypt.compare(password, user.password);
+            if (!passwordMatch) {
+                return res.status(401).json({ 'error': 'Invalid login credentials' });
+            }
+            const token = generateAccessToken(user._id, user.email);
+            res.json({ 'token': token });
+        } catch (error) {
+            res.status(500).json({ 'error': error.message });
+        }
+    });
+
+
+    // Protected route: client must provide the JWT to access
+    // Before route can go through the function, it will go through `authenticateWithJWT`
+    app.get('/profile', authenticateWithJWT, async function (req, res) {
+        // Endpoint to access user profile
+        // Use `req.payload` to get user information from the JWT payload
+        res.json({
+            'message': 'Success in accessing protected route',
+            'payload': req.payload
         });
-        res.json({ 'message': 'User signed up successfully' });
-    } catch (error) {
-        res.status(500).json({ 'error': error.message });
-    }
-});
-
-// User LOGIN route
-// Generate and send back the JWT (access token)
-app.post('/login', async function (req, res) {
-    try {
-        // Login authentication logic
-        // // After successful authentication, generate JWT and send back
-        const { email, password } = req.body;
-        const user = await db.collection('users').findOne({ email });
-        if (!user) {
-            return res.status(401).json({ 'error': 'Invalid login credentials' });
-        }
-        const passwordMatch = await bcrypt.compare(password, user.password);
-        if (!passwordMatch) {
-            return res.status(401).json({ 'error': 'Invalid login credentials' });
-        }
-        const token = generateAccessToken(user._id, user.email);
-        res.json({ 'token': token });
-    } catch (error) {
-        res.status(500).json({ 'error': error.message });
-    }
-});
-
-
-// Protected route: client must provide the JWT to access
-// Before route can go through the function, it will go through `authenticateWithJWT`
-app.get('/profile', authenticateWithJWT, async function (req, res) {
-    // Endpoint to access user profile
-    // Use `req.payload` to get user information from the JWT payload
-    res.json({
-        'message': 'Success in accessing protected route',
-        'payload': req.payload
     });
-});
 
-// Another protected route example
-app.get('/payment', authenticateWithJWT, async function (req, res) {
-    // Example of another protected route
-    res.json({
-        'message': "accessing protected payment route"
+    // Another protected route example
+    app.get('/payment', authenticateWithJWT, async function (req, res) {
+        // Example of another protected route
+        res.json({
+            'message': "accessing protected payment route"
+        });
     });
-});
+
+}
 
 
 main();
