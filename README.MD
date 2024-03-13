@@ -26,7 +26,7 @@ Before running the application, make sure you have the following installed:
 
 # Install dependencies:
 
-cd mongo-school-express-api
+cd mongo-school
 npm install
 
 # Configure environment variables:
