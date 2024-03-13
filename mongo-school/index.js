@@ -2,8 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-// const { ObjectId, MongoDBCollectionNamespace } = require('mongodb');
-const ObjectId = require('mongodb').ObjectId;
+const { ObjectId } = require('mongodb');
 require('dotenv').config();
 
 // if we are trying to require from our
@@ -51,11 +50,9 @@ async function main() {
     })
 
 
-
-
     // CRUD operations for `professors` collection
 
-    // GET all professors
+    // READ all professors
     app.get('/api/professors', async function (req, res) {
         try {
             const professors = await db.collection('professors').find({}).toArray();
@@ -65,7 +62,7 @@ async function main() {
         }
     });
 
-    // ADD a new professor
+    // CREATE a new professor
     app.post('/api/professors', async function (req, res) {
         try {
             // Object Destructuring
@@ -74,12 +71,12 @@ async function main() {
                 name,
                 email,
                 experience,
-                moduleId: ObjectId(moduleId)
+                moduleId
             };
 
             const result = await db.collection('professors').insertOne(newProfessor);
 
-            res.json(result);
+            res.json({ 'message': "Professor added" });
         } catch (error) {
             res.status(500).json({ 'error': error.message });
         }
@@ -175,6 +172,7 @@ async function main() {
         }
     });
 
+
     // User SIGNUP route
     app.post('/signup', async function (req, res) {
         try {
@@ -196,6 +194,7 @@ async function main() {
         }
     });
 
+    
     // User LOGIN route
     // Generate and send back the JWT (access token)
     app.post('/login', async function (req, res) {
