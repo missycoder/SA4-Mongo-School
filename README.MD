@@ -27,17 +27,14 @@ Before running the application, make sure you have the following installed:
 # Install dependencies:
 
 cd mongo-school
-npm install
+npm install express cors jsonwebtoken bcrypt mongodb dotenv
+npm install -g nodemon
 
 # Configure environment variables:
 Create a `.env` file in the root directory and add the following:
 
 MONGO_URI=your_mongodb_connection_string
 TOKEN_SECRET=your_jwt_secret
-
-# Run the application:
-
-npm start
 
 # Access the API:
 
